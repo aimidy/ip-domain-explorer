@@ -3,68 +3,53 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>IP / Domain 查詢</title>
-  <meta name="description" content="查詢 domain 對應的 IP、DNS 紀錄、RDAP 與 IP 地理資訊的單檔 SPA" />
+  <title>IP & Domain Explorer</title>
+  <meta name="description" content="查詢 IP / Domain 的 DNS、RDAP、PTR、IP 地理/ASN。含高亮摘要、提示、逾時保護與偏好記憶。" />
   <style>
     :root{
-      --bg: #0b1020;
-      --card: rgba(255,255,255,0.06);
-      --muted: #a7b0c0;
-      --primary: #63e6ff;
-      --accent: #9b8cff;
-      --ok: #69db7c;
-      --bad: #ff6b6b;
+      --bg: #070b19; --panel: rgba(255,255,255,.06); --muted:#9aa6bf; --text:#e9edf5;
+      --primary:#63e6ff; --accent:#9b8cff; --ok:#69db7c; --bad:#ff6b6b; --warn:#ffd43b;
       --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     }
     *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Noto Sans, "Helvetica Neue", Arial, "Apple Color Emoji","Segoe UI Emoji";
-      background:
-        radial-gradient(1200px 600px at 10% 10%, rgba(99,230,255,0.15), transparent 60%),
-        radial-gradient(900px 700px at 90% 20%, rgba(155,140,255,0.14), transparent 65%),
-        linear-gradient(180deg, #0a0f1e 0%, #0b1020 100%);
-      color:#e9edf5;
-    }
-    .container{max-width:1100px;margin:0 auto;padding:24px}
+    body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,Helvetica Neue,Arial;color:var(--text);
+      background:radial-gradient(1200px 600px at 10% 10%, rgba(99,230,255,.14), transparent 60%),
+                 radial-gradient(1000px 800px at 90% 15%, rgba(155,140,255,.14), transparent 55%),
+                 linear-gradient(180deg,#070b19,#0b1020)}
+    .container{max-width:1180px;margin:0 auto;padding:24px}
     header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px}
-    .logo{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(135deg,var(--primary),var(--accent));box-shadow:0 0 30px rgba(99,230,255,.35)}
-    h1{font-size:clamp(22px,4vw,32px);margin:0;letter-spacing:0.2px}
+    .logo{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(135deg,var(--primary),var(--accent));box-shadow:0 0 40px rgba(99,230,255,.35)}
+    h1{font-size:clamp(22px,4vw,34px);margin:0}
     .subtitle{color:var(--muted);font-size:14px}
-    .card{background:var(--card);backdrop-filter: blur(8px);border:1px solid rgba(255,255,255,0.08);border-radius:18px;padding:18px;box-shadow:0 10px 24px rgba(0,0,0,0.25)}
-    .row{display:grid;gap:12px}
-    @media(min-width:900px){
-      .layout{display:grid;grid-template-columns: 420px 1fr; gap:16px;align-items:start}
-    }
-    input, select, button, .chip{border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:#0f162b;color:#e9edf5}
-    input{padding:14px 16px;font-size:16px;width:100%;outline: none;}
+    .card{background:var(--panel);backdrop-filter: blur(10px);border:1px solid rgba(255,255,255,0.08);border-radius:18px;padding:18px;box-shadow:0 12px 28px rgba(0,0,0,.28)}
+    @media(min-width:940px){.layout{display:grid;grid-template-columns:420px 1fr;gap:16px;align-items:start}}
+    input,button,.chip{border-radius:12px;border:1px solid rgba(255,255,255,.12);background:#0f162b;color:var(--text)}
+    input{padding:14px 16px;font-size:16px;width:100%;outline:none}
     input::placeholder{color:#7b8597}
     button{padding:12px 14px;font-weight:600;cursor:pointer}
-    button.primary{background:linear-gradient(135deg, rgba(99,230,255,.2), rgba(155,140,255,.2)); border-color: rgba(99,230,255,.35)}
+    button.primary{background:linear-gradient(135deg, rgba(99,230,255,.2), rgba(155,140,255,.2));border-color:rgba(99,230,255,.35)}
     button.ghost{background:transparent}
-    button:disabled{opacity:.45;cursor:not-allowed}
+    button:disabled{opacity:.5;cursor:not-allowed}
+    .row{display:grid;gap:12px}
     .actions{display:flex;gap:10px;flex-wrap:wrap}
     .chips{display:flex;flex-wrap:wrap;gap:8px}
     .chip{padding:8px 10px;font-size:13px;display:inline-flex;align-items:center;gap:8px}
     .chip input{width:16px;height:16px}
     .help{font-size:13px;color:var(--muted)}
     .results{display:grid;gap:12px}
-    .section{border:1px dashed rgba(255,255,255,0.08); border-radius:14px; padding:14px}
+    .section{border:1px dashed rgba(255,255,255,.1);border-radius:14px;padding:14px}
     .section>header{display:flex;justify-content:space-between;align-items:center;margin:0 0 6px}
     .tag{font-size:12px;color:#9fb2c7;border:1px solid rgba(99,230,255,.35);padding:4px 8px;border-radius:999px}
     .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
-    .kv{background:#0f162b;border:1px solid rgba(255,255,255,0.1);padding:10px;border-radius:10px}
+    .kv{background:#0f162b;border:1px solid rgba(255,255,255,.1);padding:10px;border-radius:10px}
     .kv .k{color:#9fb2c7;font-size:12px}
     .kv .v{font-family:var(--mono);font-size:14px;word-break:break-all}
-    .json{font-family:var(--mono);white-space:pre-wrap;word-break:break-word;background:#0b1328;border:1px solid rgba(255,255,255,0.08);padding:12px;border-radius:10px;max-height:300px;overflow:auto}
-    .status{font-size:12px;color:#b5c1d6}
-    .pill{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,0.12)}
-    .ok{color:var(--ok)} .bad{color:var(--bad)}
-    .footer{margin-top:8px;color:#91a0b8;font-size:12px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    .json{font-family:var(--mono);white-space:pre-wrap;word-break:break-word;background:#0b1328;border:1px solid rgba(255,255,255,.08);padding:12px;border-radius:10px;max-height:360px;overflow:auto}
     .copy{cursor:pointer;user-select:none}
-    .blink{animation:blink 1.1s linear infinite}
-    @keyframes blink{0%,100%{opacity:.25}50%{opacity:1}}
-    a {color: var(--primary); text-decoration: none}
+    .hl{background:linear-gradient(135deg, rgba(99,230,255,.18), rgba(155,140,255,.12));border-color:rgba(99,230,255,.35)}
+    .tip{font-size:12px;color:#9fb2c7;margin-top:6px}
+    .footer{margin-top:8px;color:#91a0b8;font-size:12px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    .toast{position:fixed;right:18px;bottom:18px;padding:10px 12px;border:1px solid rgba(255,255,255,.12);background:#0f162b;border-radius:10px;box-shadow:0 8px 20px rgba(0,0,0,.35);z-index:9999}
   </style>
 </head>
 <body>
@@ -72,23 +57,21 @@
     <header>
       <div class="logo">🔎</div>
       <div>
-        <h1>IP / Domain 查詢</h1>
-        <div class="subtitle">清晰、簡潔、科技風。輸入 domain 或 IP，一鍵查詢常見資訊（A/AAAA、CNAME、MX、NS、TXT、RDAP、地理位置、PTR 反查）。</div>
+        <h1>IP & Domain Explorer</h1>
+        <div class="subtitle">輸入 domain 或 IP，一鍵查詢（A/AAAA、CNAME、MX、NS、TXT、SOA、RDAP、PTR、IP 地理/ASN）。</div>
       </div>
     </header>
 
     <div class="layout">
       <section class="card">
         <div class="row">
-          <label>
-            <input id="q" placeholder="例如：example.com 或 8.8.8.8" />
-          </label>
+          <input id="q" placeholder="例如：example.com 或 8.8.8.8" />
           <div class="actions">
             <button class="primary" id="btnQuery">🚀 查詢</button>
             <button class="ghost" id="btnSample">範例</button>
             <button class="ghost" id="btnClear">清空</button>
           </div>
-          <div class="chips">
+          <div class="chips" id="chips">
             <label class="chip"><input type="checkbox" data-type="A" checked> A</label>
             <label class="chip"><input type="checkbox" data-type="AAAA" checked> AAAA</label>
             <label class="chip"><input type="checkbox" data-type="CNAME" checked> CNAME</label>
@@ -98,171 +81,79 @@
             <label class="chip"><input type="checkbox" data-type="SOA"> SOA</label>
             <label class="chip"><input type="checkbox" data-type="PTR"> PTR（IP 反查）</label>
           </div>
-          <div class="help">資料來源：Cloudflare DoH（DNS JSON）、IANA RDAP、ipapi.co（IP 地理/ASN）。所有請求皆於前端執行。</div>
+          <div class="help">資料來源：Cloudflare DoH（DNS JSON）、IANA RDAP（rdap.org 代理）、ipapi.co（IP 地理/ASN）。所有請求皆於前端執行。</div>
         </div>
       </section>
 
       <section class="card results" id="results">
-        <div class="status">準備就緒。輸入關鍵字後點擊「查詢」。</div>
+        <div class="subtitle">準備就緒。輸入關鍵字後點擊「查詢」。</div>
       </section>
     </div>
 
     <div class="footer">
-      <div>✨ 小技巧：點擊任何區塊右上角「複製」可快速複製 JSON 或資料。</div>
-      <div>© <span id="year"></span> IP/Domain 查詢 · 前端純 HTML/CSS/JS — 無需後端</div>
+      <div>✨ 小技巧：點擊任何區塊右上角「📋 複製」可快速複製 JSON 或資料。</div>
+      <div>© <span id="year"></span> IP & Domain Explorer · 純 HTML/CSS/JS — 無需後端</div>
     </div>
   </div>
 
   <script>
-    const $ = (sel, el=document) => el.querySelector(sel);
-    const $$ = (sel, el=document) => Array.from(el.querySelectorAll(sel));
+    // ===== Utilities =====
+    const $ = (s,el=document)=>el.querySelector(s); const $$=(s,el=document)=>Array.from(el.querySelectorAll(s));
     const results = $('#results');
     $('#year').textContent = new Date().getFullYear();
 
-    const isIP = (v) => /^(?:\d{1,3}\.){3}\d{1,3}$/.test(v) || /^([0-9a-f]{0,4}:){2,7}[0-9a-f]{0,4}$/i.test(v);
-    const isDomain = (v) => /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/i.test(v);
+    const isIPv4=v=>/^(?:\d{1,3}\.){3}\d{1,3}$/.test(v); const isIPv6=v=>/^([0-9a-f]{0,4}:){2,7}[0-9a-f]{0,4}$/i.test(v);
+    const isIP=v=>isIPv4(v)||isIPv6(v);
+    const isDomain=v=>/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/i.test(v);
 
-    const cfDNS = async (name, type='A') => {
-      const url = `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(name)}&type=${encodeURIComponent(type)}&ct=application/dns-json`;
-      const res = await fetch(url, {headers:{'accept':'application/dns-json'}});
-      if(!res.ok) throw new Error('DNS 服務回應錯誤');
-      return res.json();
-    };
+    const withTimeout=(p,ms=12000)=>new Promise((res,rej)=>{const id=setTimeout(()=>rej(new Error('請求逾時')),ms);p.then(v=>{clearTimeout(id);res(v)}).catch(e=>{clearTimeout(id);rej(e)})});
 
-    const rdapDomain = async (domain) => {
-      const res = await fetch(`https://rdap.org/domain/${encodeURIComponent(domain)}`);
-      if(!res.ok) throw new Error('RDAP 查詢失敗');
-      return res.json();
-    };
+    const cfDNS=async(name,type='A')=>{const url=`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(name)}&type=${encodeURIComponent(type)}&ct=application/dns-json`;const r=await withTimeout(fetch(url,{headers:{'accept':'application/dns-json'}})); if(!r.ok) throw new Error('DNS 服務回應錯誤'); return r.json();};
+    const rdapDomain=async(domain)=>{const r=await withTimeout(fetch(`https://rdap.org/domain/${encodeURIComponent(domain)}`)); if(!r.ok) throw new Error('RDAP 查詢失敗'); return r.json();};
+    const ipInfo=async(ip)=>{const r=await withTimeout(fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`)); if(!r.ok) throw new Error('IP 資訊服務回應錯誤'); return r.json();};
 
-    const ipInfo = async (ip) => {
-      const res = await fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`);
-      if(!res.ok) throw new Error('IP 資訊服務回應錯誤');
-      return res.json();
-    };
+    const expandIPv6=(addr)=>{if(addr.indexOf('::')<0) return addr.split(':').map(x=>x.padStart(4,'0')).join(':'); const [l,r]=addr.split('::'); const L=l?l.split(':'):[]; const R=r?r.split(':'):[]; const miss=8-(L.length+R.length); return [...L,...Array(miss).fill('0'),...R].map(x=>x.padStart(4,'0')).join(':');};
+    const toPTRName=(ip)=> isIPv4(ip)? ip.split('.').reverse().join('.')+'.in-addr.arpa' : expandIPv6(ip).replace(/:/g,'').split('').reverse().join('.')+'.ip6.arpa';
 
-    const toPTRName = (ip) => {
-      if(/^(?:\d{1,3}\.){3}\d{1,3}$/.test(ip)){
-        return ip.split('.').reverse().join('.')+'.in-addr.arpa';
-      }
-      // IPv6 -> nibble format
-      const expanded = expandIPv6(ip).replace(/:/g,'');
-      return expanded.split('').reverse().join('.') + '.ip6.arpa';
-    };
+    // ===== UI helpers =====
+    function toast(msg,type='info'){const t=document.createElement('div');t.className='toast';t.style.color= type==='error'? '#ff6b6b' : (type==='warn'? '#ffd43b' : '#e9edf5'); t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),1600);}
+    function clearResults(){results.innerHTML='<div class="subtitle">🛰️ 正在等待查詢…</div>';}
+    function section(title, tag, {prepend=false, highlight=false}={}){const el=document.createElement('div'); el.className='section'+(highlight? ' hl':''); el.innerHTML=`<header><div style="display:flex;align-items:center;gap:10px"><strong>${title}</strong> <span class="tag">${tag}</span></div><div class="copy" title="複製內容">📋 複製</div></header><div class="body"></div>`; el.querySelector('.copy').addEventListener('click', async ()=>{const body=el.querySelector('.body'); const text=body.dataset.raw || body.textContent; try{await navigator.clipboard.writeText(text); toast('已複製')}catch{toast('複製失敗','error')}}); if(prepend) results.insertBefore(el,results.firstChild); else results.appendChild(el); return el.querySelector('.body');}
+    function showKV(title,obj,extraTip){const b=section(title,'摘要',{prepend:true,highlight:true}); b.innerHTML='<div class="grid"></div>'; const g=b.querySelector('.grid'); Object.entries(obj).forEach(([k,v])=>{const d=document.createElement('div'); d.className='kv'; d.innerHTML=`<div class="k">${k}</div><div class="v">${v??''}</div>`; g.appendChild(d);}); if(extraTip){const tip=document.createElement('div'); tip.className='tip'; tip.innerHTML=extraTip; b.appendChild(tip);} b.dataset.raw=JSON.stringify(obj,null,2);}    
+    function showJSON(title,tag,data){const b=section(title,tag); const txt=JSON.stringify(data,null,2); const pre=document.createElement('pre'); pre.className='json'; pre.textContent=txt; b.appendChild(pre); b.dataset.raw=txt;}
 
-    function expandIPv6(address){
-      // simple expansion for :: shorthand
-      if(address.indexOf('::') < 0) return address.split(':').map(x=>x.padStart(4,'0')).join(':');
-      const parts = address.split('::');
-      const left = parts[0].length?parts[0].split(':'):[];
-      const right = parts[1].length?parts[1].split(':'):[];
-      const missing = 8 - (left.length + right.length);
-      const zeros = Array(missing).fill('0');
-      return [...left, ...zeros, ...right].map(x=>x.padStart(4,'0')).join(':');
-    }
+    // ===== Preferences =====
+    function persistChips(){const picked=$$('#chips input[type="checkbox"]').map(x=>({t:x.dataset.type,v:x.checked})); localStorage.setItem('ipdex_chips', JSON.stringify(picked));}
+    function restoreChips(){try{const raw=localStorage.getItem('ipdex_chips'); if(!raw) return; const map=JSON.parse(raw).reduce((m,{t,v})=>(m[t]=v,m),{}); $$('#chips input[type="checkbox"]').forEach(x=>{ if(map.hasOwnProperty(x.dataset.type)) x.checked=map[x.dataset.type]; });}catch{}}
 
-    function section(title, tag){
-      const el = document.createElement('div');
-      el.className = 'section';
-      el.innerHTML = `
-        <header>
-          <div style="display:flex;align-items:center;gap:10px">
-            <strong>${title}</strong> <span class="tag">${tag}</span>
-          </div>
-          <div class="copy" title="複製內容">📋 複製</div>
-        </header>
-        <div class="body"></div>
-      `;
-      el.querySelector('.copy').addEventListener('click', async ()=>{
-        const body = el.querySelector('.body');
-        const text = body.dataset.raw || body.textContent;
-        try{ await navigator.clipboard.writeText(text); toast('已複製'); } catch(e){ toast('複製失敗', true); }
-      });
-      results.appendChild(el);
-      return el.querySelector('.body');
-    }
-
-    function showKV(title, obj){
-      const b = section(title, '摘要');
-      b.innerHTML = '<div class="grid"></div>';
-      const g = b.querySelector('.grid');
-      Object.entries(obj).forEach(([k,v])=>{
-        const d=document.createElement('div'); d.className='kv';
-        d.innerHTML = `<div class="k">${k}</div><div class="v">${v ?? ''}</div>`;
-        g.appendChild(d);
-      });
-      b.dataset.raw = JSON.stringify(obj, null, 2);
-    }
-
-    function showJSON(title, tag, data){
-      const b = section(title, tag);
-      const txt = JSON.stringify(data, null, 2);
-      b.textContent = '';
-      const pre = document.createElement('pre'); pre.className = 'json'; pre.textContent = txt; b.appendChild(pre);
-      b.dataset.raw = txt;
-    }
-
-    function toast(msg, isErr=false){
-      const t = document.createElement('div');
-      t.textContent = msg; t.style.position='fixed'; t.style.bottom='18px'; t.style.right='18px'; t.style.padding='10px 12px'; t.style.border='1px solid rgba(255,255,255,0.12)'; t.style.background='#0f162b'; t.style.color=isErr?'#ff6b6b':'#e9edf5'; t.style.borderRadius='10px'; t.style.zIndex=9999; t.style.boxShadow='0 8px 20px rgba(0,0,0,.35)';
-      document.body.appendChild(t); setTimeout(()=>t.remove(), 1600);
-    }
-
-    function clearResults(){ results.innerHTML = '<div class="status">🛰️ 正在等待查詢…</div>'; }
-
+    // ===== Main Query =====
     async function doQuery(){
-      const q = $('#q').value.trim();
-      if(!q){ toast('請輸入 domain 或 IP', true); return; }
-      clearResults();
-
-      const chosenTypes = $$('input[type="checkbox"]').filter(x=>x.checked).map(x=>x.dataset.type);
-      const run = async (name, type) => {
-        try{
-          const data = await cfDNS(name, type);
-          const answers = (data.Answer||[]).map(a=>a.data);
-          showJSON(`${name} — ${type}`, 'DNS', data);
-          return answers;
-        }catch(e){ showKV(`${name} — ${type}`, { 狀態:'失敗', 訊息: e.message }); return []; }
-      };
+      const q=$('#q').value.trim(); if(!q){toast('請輸入 domain 或 IP','warn'); return;} clearResults();
+      const chosenTypes=$$('#chips input[type="checkbox"]').filter(x=>x.checked).map(x=>x.dataset.type);
+      const runDNS=async(name,type)=>{try{const data=await cfDNS(name,type); showJSON(`${name} — ${type}`,'DNS',data); return (data.Answer||[]).map(a=>a.data);}catch(e){showKV(`${name} — ${type}`,{狀態:'失敗',訊息:e.message}); return [];}};
 
       if(isDomain(q)){
-        // DNS types
-        const allAnswers = {};
-        for(const t of chosenTypes.filter(t=>t!=='PTR')){
-          allAnswers[t] = await run(q, t);
-        }
-        // quick summary
-        const aList = (allAnswers['A']||[]).slice(0,5).join(', ');
-        const aaaaList = (allAnswers['AAAA']||[]).slice(0,3).join(', ');
-        showKV('重點摘要', { 目標:q, A:aList||'—', AAAA: aaaaList||'—', MX:(allAnswers['MX']||[])[0]||'—', CNAME:(allAnswers['CNAME']||[])[0]||'—' });
-
-        // RDAP
-        try{ const rd = await rdapDomain(q); showJSON('RDAP（domain 註冊資訊）', 'RDAP', rd); }
-        catch(e){ showKV('RDAP（domain 註冊資訊）', { 狀態:'失敗', 訊息:e.message }); }
-      }
-      else if(isIP(q)){
-        // PTR if selected or auto
-        const wantPTR = chosenTypes.includes('PTR');
-        const ptrName = toPTRName(q);
-        if(wantPTR){ await run(ptrName, 'PTR'); }
-        // A/AAAA etc. against the original IP doesn't make sense unless reverse; we still show a ping to DNS for education
-
-        // IP info
-        try{
-          const info = await ipInfo(q);
-          showKV('重點摘要', { 目標:q, 城市:info.city, 區域:info.region, 國家:info.country_name, 經緯度:`${info.latitude},${info.longitude}`, ASN: info.asn, ISP: info.org });
-          showJSON('IP 詳細資訊（ipapi.co）', 'IP', info);
-        }catch(e){ showKV('IP 詳細資訊', { 狀態:'失敗', 訊息:e.message }); }
-      }
-      else{
-        showKV('輸入格式錯誤', { 提示: '請輸入有效的 domain（example.com）或 IP（8.8.8.8）' });
+        const all={};
+        for(const t of chosenTypes.filter(t=>t!=='PTR')) all[t]=await runDNS(q,t);
+        const A=(all.A||[]); const AAAA=(all.AAAA||[]);
+        const tip = A.length>1 ? '⚡ 提示：此網域回覆 <b>'+A.length+'</b> 個 IPv4（A）位址，常見於 <b>CDN/負載平衡/備援</b> 設計，屬正常行為。' : 'ℹ️ 提示：A/AAAA 可能為 0~多筆，視服務部署方式而定。';
+        showKV('重點摘要',{ 目標:q, A:A.slice(0,5).join(', ')||'—', AAAA:AAAA.slice(0,3).join(', ')||'—', MX:(all.MX||[])[0]||'—', CNAME:(all.CNAME||[])[0]||'—' }, tip);
+        try{const rd=await rdapDomain(q); showJSON('RDAP（domain 註冊資訊）','RDAP',rd);}catch(e){showKV('RDAP（domain 註冊資訊）',{狀態:'失敗',訊息:e.message});}
+      } else if(isIP(q)){
+        if(chosenTypes.includes('PTR')){await runDNS(toPTRName(q),'PTR');}
+        try{const info=await ipInfo(q); showKV('重點摘要',{ 目標:q, 城市:info.city||'—', 區域:info.region||'—', 國家:info.country_name||info.country||'—', 經緯度:(info.latitude&&info.longitude)?`${info.latitude},${info.longitude}`:'—', ASN:info.asn||'—', ISP:info.org||'—' }, 'ℹ️ 提示：IP 地理位置為近似值，可能與實際機房不同。'); showJSON('IP 詳細資訊（ipapi.co）','IP',info);}catch(e){showKV('IP 詳細資訊',{狀態:'失敗',訊息:e.message});}
+      } else {
+        showKV('輸入格式錯誤',{提示:'請輸入有效的 domain（example.com）或 IP（8.8.8.8）'});
       }
     }
 
+    // Wire-up
     $('#btnQuery').addEventListener('click', doQuery);
     $('#btnClear').addEventListener('click', ()=>{ $('#q').value=''; clearResults(); $('#q').focus(); });
     $('#btnSample').addEventListener('click', ()=>{ $('#q').value = Math.random()>0.5 ? 'example.com' : '8.8.8.8'; doQuery(); });
     $('#q').addEventListener('keydown', e=>{ if(e.key==='Enter') doQuery(); });
+    $('#chips').addEventListener('change', persistChips);
+    restoreChips();
   </script>
 </body>
 </html>
